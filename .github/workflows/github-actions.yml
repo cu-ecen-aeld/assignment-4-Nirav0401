@@ -1,61 +1,27 @@
 name: assignment-test
 on:
-  push:
-    tags-ignore:
-      - '*'
-    branches:
-      - '*'
+    push:
+        tags-ignore:
+            - '*'
+        branches:
+            - '*'
 jobs:
-  full-test:
-    container: cuaesd/aesd-autotest:assignment4-buildroot
-    runs-on: self-hosted
-    timeout-minutes: 120
-    steps:
-      # Checkout the repository and submodules
-      - uses: actions/checkout@v2
-      
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-      
-      # Setup SSH Agent and add the private key from secrets
-      - uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # Verify Network Connectivity (Optional step to check network access)
-      - name: Check network connectivity
-        run: |
-          wget -q --spider https://ftp.gnu.org/gnu/binutils/
-          if [ $? -eq 0 ]; then
-            echo "Network connection is fine."
-          else
-            echo "Network connection failed."
-            exit 1
-          fi
-
-      # Download missing linux-headers if not present
-      - name: Download missing linux-headers
-        run: |
-          if [ ! -f /github/home/.dl/linux/linux-6.1.44.tar.xz ]; then
-            mkdir -p /github/home/.dl/linux/
-            wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.44.tar.xz -P /github/home/.dl/linux/
-          fi
-
-      # Download missing binutils file if not present
-      - name: Download missing binutils-2.40.tar.xz
-        run: |
-          if [ ! -f /github/home/.dl/binutils/binutils-2.40.tar.xz ]; then
-            mkdir -p /github/home/.dl/binutils/
-            wget https://ftp.gnu.org/gnu/binutils/binutils-2.40.tar.xz -P /github/home/.dl/binutils/
-          fi
-
-      # Run full test script with SSH handling (ensure host key checking is disabled)
-      - name: Run full test
-        env:
-          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
-        run: ./full-test.sh
-
-      # Cleanup the SSH agent after the job is complete
-      - name: Cleanup
-        if: always()
-        run: ssh-add -D
+    full-test:
+        container: cuaesd/aesd-autotest:assignment4-buildroot
+        runs-on: self-hosted
+        timeout-minutes: 120
+        steps:
+          - uses: actions/checkout@v2
+          - name: Checkout submodules
+            run: git submodule update --init --recursive
+          - uses: webfactory/ssh-agent@v0.5.3
+            with:
+                ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          - name: Run full test
+            env:
+              GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+            run: ./full-test.sh
+          - name: Cleanup
+            if: always()
+            run: |
+              ssh-add -D
