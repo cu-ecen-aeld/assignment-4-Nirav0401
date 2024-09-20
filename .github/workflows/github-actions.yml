@@ -23,23 +23,17 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      # Install curl (required for downloading linux headers)
+      - name: Install curl
+        run: |
+          apt-get update && apt-get install -y curl
+
       # Step to download missing linux-headers (linux-6.1.44.tar.xz) if not present
       - name: Download missing linux-headers
         run: |
           if [ ! -f /github/home/.dl/linux/linux-6.1.44.tar.xz ]; then
             mkdir -p /github/home/.dl/linux/
             curl -L -o /github/home/.dl/linux/linux-6.1.44.tar.xz https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.44.tar.xz
-          fi
-
-      # Verify Network Connectivity (Optional step to check network access)
-      - name: Check network connectivity
-        run: |
-          wget -q --spider https://ftp.gnu.org/gnu/binutils/
-          if [ $? -eq 0 ]; then
-            echo "Network connection is fine."
-          else
-            echo "Network connection failed."
-            exit 1
           fi
 
       # Run full test script with SSH handling (ensure host key checking is disabled)
